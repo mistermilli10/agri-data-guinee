@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActorType {
+  COOPERATIVE
+  TRANSFORMATEUR
+  STARTUP
+  ONG
+  ASSOCIATION
+  INSTITUTION
+}
+
+enum FiliereType {
+  PRODUCTION
+  TRANSFORMATION
+  EXPORT
+  INNOVATION
+}
+
+enum ProjectKind {
+  GOVT
+  PRIVATE
+  STARTUP
+  RESEARCH
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+model Region {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  slug      String       @unique
+  stats     RegionStat[]
+  actors    Actor[]
+  filieres  Filiere[]
+  projects  Project[]    @relation("ProjectRegions", references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model RegionStat {
+  id                 String   @id @default(cuid())
+  regionId           String
+  year               Int
+  productionTons     Float
+  transformationTons Float
+  kpisJson           Json?
+  region             Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
+}
+
+model Actor {
+  id          String     @id @default(cuid())
+  name        String
+  type        ActorType
+  regionId    String?
+  address     String?
+  phone       String?
+  email       String?
+  members     Int?
+  foundedAt   Int?
+  contactName String?
+  website     String?
+  status      String?
+  region      Region?    @relation(fields: [regionId], references: [id])
+  filieres    Filiere[]  @relation("ActorFilieres", references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Filiere {
+  id          String     @id @default(cuid())
+  name        String
+  type        FiliereType
+  regionId    String?
+  product     String
+  volumeTons  Float?
+  mainActorId String?
+  contact     String?
+  region      Region?    @relation(fields: [regionId], references: [id])
+  mainActor   Actor?     @relation(fields: [mainActorId], references: [id])
+  actors      Actor[]    @relation("ActorFilieres")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Project {
+  id        String    @id @default(cuid())
+  title     String
+  kind      ProjectKind
+  status    ProjectStatus
+  summary   String?
+  startYear Int?
+  endYear   Int?
+  budgetUSD Float?
+  progress  Int?
+  regions   Region[]  @relation("ProjectRegions")
+  linksJson Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  title        String
+  contactEmail String
+  description  String
+  status       String   @default("pending")
+  createdBy    String?
+  createdAt    DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+}
